@@ -3,9 +3,15 @@ extends RigidBody2D
 
 # Member variables
 var anim = ""
+var new_anim = ""
 var siding_left = false
 var jumping = false
 var shooting = false
+var hurt = false
+var hurt_animation = false
+var hurt_animation_counter = 0
+var enemy_position #To know where to "kick" the player
+var on_air_threshold_counter = 0 #Replaceable with airborne time?
 
 var WALK_ACCEL = 2000.0 # Higher = Better control, Lower = Sluggish
 var WALK_DEACCEL = 2000.0
@@ -14,6 +20,8 @@ var AIR_ACCEL = 300.0 # It's over 9000!
 var AIR_DEACCEL = 2900.0 # Make it higher to give the player better air control, or slower to make the game more "realistic"
 var JUMP_VELOCITY = 438
 var STOP_JUMP_FORCE = 2000.0
+var HURT_ANIMATION_TIME = 0.5
+var ON_AIR_THRESHOLD = 3; #Avoid the "falling" animation while walking on a flat floor
 
 var MAX_FLOOR_AIRBORNE_TIME = 0.15
 
@@ -28,6 +36,7 @@ var shoot_time = 1e20
 var MAX_SHOOT_POSE_TIME = 0.3
 
 var bullet = preload("res://src/actors/player/bullet.tscn")
+var bullet_smoke_pool =[]
 
 var floor_h_velocity = 0.0
 var enemy
@@ -38,12 +47,37 @@ var enemy
 #	print("Beam to active!")
 #	self.set_pos(spawnerpos)
 
+func correct_vertical_position(s, found_floor, jumping):
+	#Prevents the character from flying on ramps, experimental fix
+	if (not found_floor and not jumping and s.get_linear_velocity().y < -200 and not hurt_animation):
+		s.set_linear_velocity(Vector2(s.get_linear_velocity().x, 0))
+
+
+func hurt_managment():
+	if(hurt):
+		hurt_animation_counter = 0;
+		hurt_animation = true
+		var dir
+		if(get_pos().x < enemy_position.x):
+			dir = -1
+		else:
+			dir = 1
+		apply_impulse(Vector2(), Vector2(dir*4000, -2000))
+		hurt = false
+		get_node("anim").play("hurt")
+
+func shoot_smoke():
+	#Crate one instance for every particle
+	var shoot_smoke_particle = preload("res://src/actors/player/Particles/Shoot_particle.tscn").instance()
+	get_node("..").add_child(shoot_smoke_particle)
+	shoot_smoke_particle.set_pos(Vector2(get_pos().x + 15 * CURR_DIR.x, get_pos().y + 7))
+	shoot_smoke_particle.set_emitting(true)
+	get_node("sfx").play("schwuit")
 
 func _integrate_forces(s):
 	var linear_vel = s.get_linear_velocity()
 	var step = s.get_step()
-	
-	var new_anim = anim
+	new_anim = anim
 	var new_siding_left = siding_left
 	
 	# Get the controls
@@ -93,8 +127,9 @@ func _integrate_forces(s):
 		if (!jump):
 			linear_vel.y += STOP_JUMP_FORCE*step
 	
-	if (on_floor):
+	if (on_floor && not hurt_animation):
 		# Process logic when character is on floor
+		on_air_threshold_counter  = 0;
 		if (move_left and not move_right):
 			CURR_DIR = DIR_LEFT
 			if (linear_vel.x > -WALK_MAX_VELOCITY):
@@ -162,6 +197,7 @@ func _integrate_forces(s):
 	else:
 		# Process logic when the character is in the air
 		# When we are only pressing LEFT movement
+		on_air_threshold_counter += 1;
 		if (move_left && !move_right):
 			CURR_DIR = DIR_LEFT
 			if (linear_vel.x > -WALK_MAX_VELOCITY):
@@ -185,37 +221,30 @@ func _integrate_forces(s):
 				x_vel = 0
 			linear_vel.x = sign(linear_vel.x)*x_vel
 		
-		if (linear_vel.y < 0):
-			if (shoot_time < MAX_SHOOT_POSE_TIME):
-				new_anim = "jumping_weapon"
+		if( on_air_threshold_counter > ON_AIR_THRESHOLD): 
+			if (linear_vel.y < 0):
+				if (shoot_time < MAX_SHOOT_POSE_TIME):
+					new_anim = "jumping_weapon"
+				else:
+					new_anim = "jumping"
 			else:
-				new_anim = "jumping"
-		else:
-			if (shoot_time < MAX_SHOOT_POSE_TIME):
-				new_anim = "falling_weapon"
-			
-			else:
-				new_anim = "falling"
-	
+				if (shoot_time < MAX_SHOOT_POSE_TIME):
+					new_anim = "falling_weapon"
+				else:
+					new_anim = "falling"
 	# A good idea when impementing characters of all kinds,
 	# compensates for physics imprecission, as well as human reaction delay.
 	if (shoot and not shooting):
 		shoot_time = 0
 		var bi = bullet.instance()
 		var ss
-		#if (CURR_DIR==DIR_LEFT):
-		#	ss = -1.0
-		#else:
-		#	ss = 1.0
 		var pos = get_pos() + get_node("bullet_shoot").get_pos()*CURR_DIR
 		
 		bi.set_pos(pos)
 		get_parent().add_child(bi)
-		
 		bi.set_linear_velocity(Vector2(800.0*CURR_DIR.x, -80))
-		get_node("sprite/smoke").set_emitting(true)
-		get_node("sfx").play("schwuit")
 		PS2D.body_add_collision_exception(bi.get_rid(), get_rid()) # Make bullet and this not collide
+		shoot_smoke()
 	else:
 		shoot_time += step
 	# Check siding direction
@@ -232,12 +261,6 @@ func _integrate_forces(s):
 		elif(move_right):
 			get_node("sprite").set_scale(DIR_RIGHT)
 			LAST_DIR = DIR_RIGHT
-	
-	# Change animation
-	if (new_anim != anim):
-		anim = new_anim
-		get_node("anim").play(anim)
-	
 	shooting = shoot
 	
 	# Apply floor velocity
@@ -248,7 +271,18 @@ func _integrate_forces(s):
 	# Finally, apply gravity and set back the linear velocity
 	linear_vel += s.get_total_gravity()*step
 	s.set_linear_velocity(linear_vel)
+	correct_vertical_position(s, found_floor, jumping)
+
+	hurt_managment()
+
+	if (hurt_animation_counter < HURT_ANIMATION_TIME and hurt_animation):
+		hurt_animation_counter += 1.0/60 #maybe not the best way
 	
+	elif (anim != new_anim):
+		hurt_animation_counter = 0
+		hurt_animation = false
+		anim = new_anim
+		get_node("anim").play(anim)
 
 
 func _ready():
@@ -272,3 +306,10 @@ func _process(delta):
 #	var msg = "I just sneezed on your wall! Beat my score and Stop the Running nose!"
 #	var title = "I just sneezed on your wall!"
 #	Facebook.post("feed", msg, title, link, icon)
+
+
+func _on_player_body_enter( body ):
+	if(body.has_method("get_can_attack") and body.get_can_attack() and not hurt_animation):
+		print("Ouch! Player attacked")
+		enemy_position = body.get_position()
+		hurt = true;

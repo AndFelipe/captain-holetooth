@@ -4,10 +4,13 @@ extends RigidBody2D
 # Member variables
 const STATE_WALKING = 0
 const STATE_DYING = 1
+const ATTACK_COOLDOWN = 70
+const FORCE = Vector2(4000, -4000)
 
 var state = STATE_WALKING
 
 var direction = -1
+var position
 var anim = ""
 
 var rc_left = null
@@ -15,20 +18,34 @@ var rc_right = null
 var WALK_SPEED = 50
 
 var bullet_class = preload("res://src/actors/player/bullet.gd")
+var player_class = preload("res://src/actors/player/player.gd")
+var attack_cooldown_counter = 0
+var can_attack = true
 
 var destroyed = false
+
 
 func _die():
 	destroyed = true
 	queue_free()
 
+func set_can_attack(boolean):
+	can_attack = boolean
+	
+func get_can_attack():
+	return can_attack
+	
+func get_direction():
+	return direction
+
+func get_position():
+	return get_pos();
 
 func _pre_explode():
 	# Stay there
 	clear_shapes()
 	set_mode(MODE_STATIC)
 	get_node("sfx").play("cork_pop")
-
 
 
 func _integrate_forces(s):
@@ -39,13 +56,13 @@ func _integrate_forces(s):
 		new_anim = "explode"
 	elif (state == STATE_WALKING):
 		new_anim = "walk"
-
+		
 		var wall_side = 0.0
-
+		
 		for i in range(s.get_contact_count()):
 			var cc = s.get_contact_collider_object(i)
 			var dp = s.get_contact_local_normal(i)
-
+			
 			if (cc):
 				if (cc extends bullet_class and not cc.disabled):
 					set_mode(MODE_RIGID)
@@ -56,22 +73,21 @@ func _integrate_forces(s):
 					cc.disable()
 					game.reset_bonus_score()
 					get_node("sfx").play("punch")
-
 					break
+					
+				elif (cc extends player_class and can_attack):
+					attack_cooldown_counter = ATTACK_COOLDOWN;
 
+					
 			if (dp.x > 0.9):
 				wall_side = 1.0
 			elif (dp.x < -0.9):
 				wall_side = -1.0
-
-		# Changing direction
-		# Todo: Add turning animation
-		# Testing
-
+				
 		if (wall_side != 0 and wall_side != direction):
 			direction = -direction
 			get_node("sprite").set_scale(Vector2(-direction, 1))
-
+			
 		if (direction < 0 and not rc_left.is_colliding() and rc_right.is_colliding()):
 			direction = -direction
 			print("Direction changed right?")
@@ -85,14 +101,16 @@ func _integrate_forces(s):
 			get_node("sprite").set_scale(Vector2(-direction, 1))
 
 		lv.x = direction*WALK_SPEED
-
+		if(attack_cooldown_counter != 0):
+			attack_cooldown_counter -= 1
+		set_can_attack(attack_cooldown_counter == 0)
 	if(anim != new_anim):
 		anim = new_anim
 		get_node("anim").play(anim)
-
 	s.set_linear_velocity(lv)
 
 
 func _ready():
 	rc_left = get_node("raycast_left")
 	rc_right = get_node("raycast_right")
+	

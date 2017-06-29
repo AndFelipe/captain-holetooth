@@ -433,7 +433,13 @@ margin/left = 1.0
 margin/top = 331.0
 margin/right = 727.0
 margin/bottom = 422.0
-text = "This scene serves as a tool for editing the tileset.\nNodes (sprites) and their respective collisionsare edited here.\n\nTo create a tileset from this, a \"TileSet\" resoucre must be created. Use the helper in: Scene -> Convert To -> TileSet.\nThis will save a tileset. Saving over it will merge your changes.\n\nFinally, the saved tileset resource (tileset.tres in this case), can be opened to be used into a TileMap node for editing a tile map."
+text = "This scene serves as a tool for editing the tileset.
+Nodes (sprites) and their respective collisionsare edited here.
+
+To create a tileset from this, a \"TileSet\" resoucre must be created. Use the helper in: Scene -> Convert To -> TileSet.
+This will save a tileset. Saving over it will merge your changes.
+
+Finally, the saved tileset resource (tileset.tres in this case), can be opened to be used into a TileMap node for editing a tile map."
 percent_visible = 1.0
 lines_skipped = 0
 max_lines_visible = -1

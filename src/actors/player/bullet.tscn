@@ -22,14 +22,28 @@ tracks/0/type = "value"
 tracks/0/path = NodePath("particles:config/emitting")
 tracks/0/interp = 1
 tracks/0/imported = false
-tracks/0/keys = { "times":FloatArray( 0 ), "transitions":FloatArray( 1 ), "update":1, "values":[ false ] }
+tracks/0/keys = {
+"times": FloatArray( 0 ),
+"transitions": FloatArray( 1 ),
+"update": 1,
+"values": [ false ]
+}
 tracks/1/type = "method"
 tracks/1/path = NodePath(".")
 tracks/1/interp = 1
 tracks/1/imported = false
-tracks/1/keys = { "times":FloatArray( 1.31 ), "transitions":FloatArray( 1 ), "values":[ { "args":[  ], "method":"queue_free" } ] }
+tracks/1/keys = {
+"times": FloatArray( 1.31 ),
+"transitions": FloatArray( 1 ),
+"values": [ {
+"args": [  ],
+"method": "queue_free"
+} ]
+}
 
-[node name="bullet" type="RigidBody2D" groups=[ "player_shot" ]]
+[node name="bullet" type="RigidBody2D" groups=[
+"player_shot",
+]]
 
 input/pickable = false
 shapes/0/shape = SubResource( 1 )
@@ -59,6 +73,7 @@ script/script = ExtResource( 1 )
 config/amount = 2
 config/lifetime = 1.0
 config/emitting = false
+config/process_mode = 1
 config/local_space = false
 config/explosiveness = 0.920139
 config/texture = ExtResource( 2 )

@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=1]
+[gd_scene load_steps=20 format=1]
 
 [ext_resource path="res://src/actors/player/player.gd" type="Script" id=1]
 [ext_resource path="res://src/actors/player/lochzahn_spritesheet.png" type="Texture" id=2]
@@ -11,7 +11,7 @@
 custom_solver_bias = 0.5
 length = 19.178
 
-[sub_resource type="CapsuleShape2D" id=14]
+[sub_resource type="CapsuleShape2D" id=2]
 
 custom_solver_bias = 0.0
 radius = 10.0
@@ -72,6 +72,33 @@ tracks/0/keys = {
 
 [sub_resource type="Animation" id=7]
 
+resource/name = "hurt"
+length = 1.0
+loop = false
+step = 0.1
+tracks/0/type = "value"
+tracks/0/path = NodePath("sprite:modulate")
+tracks/0/interp = 1
+tracks/0/imported = false
+tracks/0/keys = {
+"times": FloatArray( 0, 0.5, 1 ),
+"transitions": FloatArray( 1, 1, 1 ),
+"update": 0,
+"values": [ Color( 1, 1, 1, 1 ), Color( 1, 0.441406, 0.441406, 1 ), Color( 1, 1, 1, 1 ) ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath("sprite:frame")
+tracks/1/interp = 1
+tracks/1/imported = false
+tracks/1/keys = {
+"times": FloatArray( 0, 1 ),
+"transitions": FloatArray( 1, 1 ),
+"update": 1,
+"values": [ 22, 19 ]
+}
+
+[sub_resource type="Animation" id=8]
+
 length = 15.0
 loop = true
 step = 0.25
@@ -86,7 +113,7 @@ tracks/0/keys = {
 "values": [ 17, 18, 19, 19, 19, 20, 18, 19, 20 ]
 }
 
-[sub_resource type="Animation" id=8]
+[sub_resource type="Animation" id=9]
 
 length = 0.5
 loop = true
@@ -102,7 +129,7 @@ tracks/0/keys = {
 "values": [ 25 ]
 }
 
-[sub_resource type="Animation" id=9]
+[sub_resource type="Animation" id=10]
 
 length = 0.5
 loop = true
@@ -118,7 +145,7 @@ tracks/0/keys = {
 "values": [ 23, 24 ]
 }
 
-[sub_resource type="Animation" id=10]
+[sub_resource type="Animation" id=11]
 
 length = 0.5
 loop = true
@@ -134,7 +161,7 @@ tracks/0/keys = {
 "values": [ 26 ]
 }
 
-[sub_resource type="Animation" id=11]
+[sub_resource type="Animation" id=12]
 
 length = 2.0
 loop = true
@@ -160,7 +187,7 @@ tracks/1/keys = {
 "values": [ "step", "step" ]
 }
 
-[sub_resource type="Animation" id=12]
+[sub_resource type="Animation" id=13]
 
 length = 1.25
 loop = true
@@ -176,7 +203,7 @@ tracks/0/keys = {
 "values": [ 8, 25, 7, 8, 9, 5 ]
 }
 
-[sub_resource type="Animation" id=13]
+[sub_resource type="Animation" id=14]
 
 length = 1.25
 loop = true
@@ -201,7 +228,7 @@ input/pickable = false
 shapes/0/shape = SubResource( 1 )
 shapes/0/transform = Matrix32( 1, 0, 0, 1, -1, 6 )
 shapes/0/trigger = false
-shapes/1/shape = SubResource( 14 )
+shapes/1/shape = SubResource( 2 )
 shapes/1/transform = Matrix32( 1, 0, 0, 1, 0, 0 )
 shapes/1/trigger = false
 collision/layers = 1
@@ -227,7 +254,7 @@ script/script = ExtResource( 1 )
 
 texture = ExtResource( 2 )
 hframes = 26
-frame = 25
+frame = 21
 
 [node name="smoke" type="Particles2D" parent="sprite"]
 
@@ -271,13 +298,14 @@ root/root = NodePath("..")
 anims/crouch = SubResource( 4 )
 anims/falling = SubResource( 5 )
 anims/falling_weapon = SubResource( 6 )
-anims/idle = SubResource( 7 )
-anims/idle_weapon = SubResource( 8 )
-anims/jumping = SubResource( 9 )
-anims/jumping_weapon = SubResource( 10 )
-anims/run = SubResource( 11 )
-anims/run_weapon = SubResource( 12 )
-anims/standing_weapon_ready = SubResource( 13 )
+anims/hurt = SubResource( 7 )
+anims/idle = SubResource( 8 )
+anims/idle_weapon = SubResource( 9 )
+anims/jumping = SubResource( 10 )
+anims/jumping_weapon = SubResource( 11 )
+anims/run = SubResource( 12 )
+anims/run_weapon = SubResource( 13 )
+anims/standing_weapon_ready = SubResource( 14 )
 playback/active = true
 playback/speed = 3.5
 blend_times = [  ]
@@ -317,13 +345,15 @@ _update_shape_index = 0
 
 [node name="CollisionShape2D 2" type="CollisionShape2D" parent="."]
 
-shape = SubResource( 14 )
+shape = SubResource( 2 )
 trigger = false
 _update_shape_index = 1
 
 [node name="sfx" parent="." instance=ExtResource( 4 )]
 
 [node name="mobile_ui_player" parent="." instance=ExtResource( 5 )]
+
+editor/display_folded = true
 
 [node name="left" parent="mobile_ui_player"]
 
@@ -351,6 +381,8 @@ transform/pos = Vector2( 372, 216 )
 shape = null
 shape_centered = true
 shape_visible = true
+
+[connection signal="body_enter" from="." to="." method="_on_player_body_enter"]
 
 
 [editable path="sfx"]
